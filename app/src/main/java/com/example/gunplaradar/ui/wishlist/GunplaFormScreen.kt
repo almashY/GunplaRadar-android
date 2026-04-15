@@ -1,0 +1,213 @@
+package com.example.gunplaradar.ui.wishlist
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
+import com.example.gunplaradar.data.entity.GunplaItemEntity
+import java.text.SimpleDateFormat
+import java.util.*
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun GunplaFormScreen(
+    existingItem: GunplaItemEntity? = null,
+    onSave: (GunplaItemEntity) -> Unit,
+    onBack: () -> Unit
+) {
+    var name by remember { mutableStateOf(existingItem?.name ?: "") }
+    var grade by remember { mutableStateOf(existingItem?.grade ?: "") }
+    var priceText by remember { mutableStateOf(existingItem?.price?.toString() ?: "") }
+    var url by remember { mutableStateOf(existingItem?.url ?: "") }
+    var priority by remember { mutableIntStateOf(existingItem?.priority ?: 2) }
+    var tagColor by remember { mutableIntStateOf(existingItem?.tagColor ?: 0) }
+    var releaseDateText by remember {
+        mutableStateOf(
+            existingItem?.releaseDate?.let {
+                SimpleDateFormat("yyyy/MM/dd", Locale.JAPAN).format(Date(it))
+            } ?: ""
+        )
+    }
+    var restockDateText by remember {
+        mutableStateOf(
+            existingItem?.restockDate?.let {
+                SimpleDateFormat("yyyy/MM/dd", Locale.JAPAN).format(Date(it))
+            } ?: ""
+        )
+    }
+    var nameError by remember { mutableStateOf(false) }
+    var gradeError by remember { mutableStateOf(false) }
+
+    val tagColors = listOf(
+        Color(0xFF9E9E9E),
+        Color(0xFFE53935),
+        Color(0xFF43A047),
+        Color(0xFF1E88E5),
+        Color(0xFFFDD835),
+        Color(0xFF8E24AA)
+    )
+    val priorityLabels = listOf("最高", "高", "中", "低")
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(if (existingItem == null) "ガンプラを追加" else "ガンプラを編集") },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "戻る")
+                    }
+                }
+            )
+        }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            OutlinedTextField(
+                value = name,
+                onValueChange = {
+                    name = it
+                    nameError = false
+                },
+                label = { Text("名前 *") },
+                modifier = Modifier.fillMaxWidth(),
+                isError = nameError,
+                supportingText = if (nameError) ({ Text("名前は必須です") }) else null,
+                singleLine = true
+            )
+
+            OutlinedTextField(
+                value = grade,
+                onValueChange = {
+                    grade = it
+                    gradeError = false
+                },
+                label = { Text("グレード *") },
+                placeholder = { Text("例: HG, MG, RG, PG") },
+                modifier = Modifier.fillMaxWidth(),
+                isError = gradeError,
+                supportingText = if (gradeError) ({ Text("グレードは必須です") }) else null,
+                singleLine = true
+            )
+
+            OutlinedTextField(
+                value = priceText,
+                onValueChange = { priceText = it.filter { c -> c.isDigit() } },
+                label = { Text("価格 (円)") },
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                prefix = { Text("¥") },
+                singleLine = true
+            )
+
+            OutlinedTextField(
+                value = url,
+                onValueChange = { url = it },
+                label = { Text("URL") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+
+            OutlinedTextField(
+                value = releaseDateText,
+                onValueChange = { releaseDateText = it },
+                label = { Text("発売日 (yyyy/MM/dd)") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+
+            OutlinedTextField(
+                value = restockDateText,
+                onValueChange = { restockDateText = it },
+                label = { Text("再販日 (yyyy/MM/dd)") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+
+            // 優先度
+            Text("優先度", style = MaterialTheme.typography.labelLarge)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                priorityLabels.forEachIndexed { index, label ->
+                    FilterChip(
+                        selected = priority == index,
+                        onClick = { priority = index },
+                        label = { Text(label) }
+                    )
+                }
+            }
+
+            // タグカラー
+            Text("タグカラー", style = MaterialTheme.typography.labelLarge)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                tagColors.forEachIndexed { index, color ->
+                    Box(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .clip(CircleShape)
+                            .background(color)
+                            .clickable { tagColor = index }
+                            .then(
+                                if (tagColor == index)
+                                    Modifier.border(3.dp, MaterialTheme.colorScheme.onSurface, CircleShape)
+                                else Modifier
+                            )
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Button(
+                onClick = {
+                    nameError = name.isBlank()
+                    gradeError = grade.isBlank()
+                    if (nameError || gradeError) return@Button
+
+                    val sdf = SimpleDateFormat("yyyy/MM/dd", Locale.JAPAN)
+                    val releaseDate = try {
+                        if (releaseDateText.isNotBlank()) sdf.parse(releaseDateText)?.time else null
+                    } catch (e: Exception) { null }
+                    val restockDate = try {
+                        if (restockDateText.isNotBlank()) sdf.parse(restockDateText)?.time else null
+                    } catch (e: Exception) { null }
+
+                    val item = (existingItem ?: GunplaItemEntity(name = "", grade = "")).copy(
+                        name = name.trim(),
+                        grade = grade.trim(),
+                        price = priceText.toIntOrNull(),
+                        url = url.trim().ifBlank { null },
+                        releaseDate = releaseDate,
+                        restockDate = restockDate,
+                        priority = priority,
+                        tagColor = tagColor
+                    )
+                    onSave(item)
+                },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text(if (existingItem == null) "追加する" else "保存する")
+            }
+        }
+    }
+}

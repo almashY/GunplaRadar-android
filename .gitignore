@@ -12,3 +12,4 @@ local.properties
 # Secrets
 gradle.properties
 .gradle/
+.claude
