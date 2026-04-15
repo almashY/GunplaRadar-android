@@ -1,11 +1,13 @@
 package com.example.gunplaradar.ui.patrol
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -32,8 +34,30 @@ fun PatrolFormScreen(
     var storeExpanded by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
 
-    val sdf = SimpleDateFormat("yyyy/MM/dd", Locale.JAPAN)
-    val tdf = SimpleDateFormat("HH:mm", Locale.JAPAN)
+    var showDatePicker by remember { mutableStateOf(false) }
+    val datePickerState = rememberDatePickerState()
+
+    val sdf = remember { SimpleDateFormat("yyyy/MM/dd", Locale.JAPAN) }
+    val tdf = remember { SimpleDateFormat("HH:mm", Locale.JAPAN) }
+
+    if (showDatePicker) {
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let {
+                        dateText = sdf.format(Date(it))
+                    }
+                    showDatePicker = false
+                }) { Text("OK") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) { Text("キャンセル") }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -86,13 +110,24 @@ fun PatrolFormScreen(
                 }
             }
 
-            OutlinedTextField(
-                value = dateText,
-                onValueChange = { dateText = it },
-                label = { Text("日付 (yyyy/MM/dd)") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
+            Box(modifier = Modifier.clickable { showDatePicker = true }) {
+                OutlinedTextField(
+                    value = dateText,
+                    onValueChange = {},
+                    label = { Text("日付") },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = false,
+                    trailingIcon = {
+                        Icon(Icons.Default.CalendarToday, contentDescription = "カレンダーを開く")
+                    },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                        disabledBorderColor = MaterialTheme.colorScheme.outline,
+                        disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                )
+            }
 
             OutlinedTextField(
                 value = timeText,

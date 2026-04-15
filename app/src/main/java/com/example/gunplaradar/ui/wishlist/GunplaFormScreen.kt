@@ -11,9 +11,9 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -22,6 +22,15 @@ import androidx.compose.ui.unit.dp
 import com.example.gunplaradar.data.entity.GunplaItemEntity
 import java.text.SimpleDateFormat
 import java.util.*
+
+private fun Long.toUtcMidnight(): Long {
+    val local = Calendar.getInstance()
+    local.timeInMillis = this
+    val utc = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
+    utc.set(local.get(Calendar.YEAR), local.get(Calendar.MONTH), local.get(Calendar.DAY_OF_MONTH), 0, 0, 0)
+    utc.set(Calendar.MILLISECOND, 0)
+    return utc.timeInMillis
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,22 +45,30 @@ fun GunplaFormScreen(
     var url by remember { mutableStateOf(existingItem?.url ?: "") }
     var priority by remember { mutableIntStateOf(existingItem?.priority ?: 2) }
     var tagColor by remember { mutableIntStateOf(existingItem?.tagColor ?: 0) }
+
+    val sdf = remember { SimpleDateFormat("yyyy/MM/dd", Locale.JAPAN) }
+
     var releaseDateText by remember {
         mutableStateOf(
-            existingItem?.releaseDate?.let {
-                SimpleDateFormat("yyyy/MM/dd", Locale.JAPAN).format(Date(it))
-            } ?: ""
+            existingItem?.releaseDate?.let { sdf.format(Date(it)) } ?: ""
         )
     }
     var restockDateText by remember {
         mutableStateOf(
-            existingItem?.restockDate?.let {
-                SimpleDateFormat("yyyy/MM/dd", Locale.JAPAN).format(Date(it))
-            } ?: ""
+            existingItem?.restockDate?.let { sdf.format(Date(it)) } ?: ""
         )
     }
     var nameError by remember { mutableStateOf(false) }
     var gradeError by remember { mutableStateOf(false) }
+
+    var showReleaseDatePicker by remember { mutableStateOf(false) }
+    var showRestockDatePicker by remember { mutableStateOf(false) }
+    val releaseDatePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = existingItem?.releaseDate?.toUtcMidnight()
+    )
+    val restockDatePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = existingItem?.restockDate?.toUtcMidnight()
+    )
 
     val tagColors = listOf(
         Color(0xFF9E9E9E),
@@ -62,6 +79,44 @@ fun GunplaFormScreen(
         Color(0xFF8E24AA)
     )
     val priorityLabels = listOf("最高", "高", "中", "低")
+
+    if (showReleaseDatePicker) {
+        DatePickerDialog(
+            onDismissRequest = { showReleaseDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    releaseDatePickerState.selectedDateMillis?.let {
+                        releaseDateText = sdf.format(Date(it))
+                    }
+                    showReleaseDatePicker = false
+                }) { Text("OK") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showReleaseDatePicker = false }) { Text("キャンセル") }
+            }
+        ) {
+            DatePicker(state = releaseDatePickerState)
+        }
+    }
+
+    if (showRestockDatePicker) {
+        DatePickerDialog(
+            onDismissRequest = { showRestockDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    restockDatePickerState.selectedDateMillis?.let {
+                        restockDateText = sdf.format(Date(it))
+                    }
+                    showRestockDatePicker = false
+                }) { Text("OK") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRestockDatePicker = false }) { Text("キャンセル") }
+            }
+        ) {
+            DatePicker(state = restockDatePickerState)
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -128,21 +183,43 @@ fun GunplaFormScreen(
                 singleLine = true
             )
 
-            OutlinedTextField(
-                value = releaseDateText,
-                onValueChange = { releaseDateText = it },
-                label = { Text("発売日 (yyyy/MM/dd)") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
+            Box(modifier = Modifier.clickable { showReleaseDatePicker = true }) {
+                OutlinedTextField(
+                    value = releaseDateText,
+                    onValueChange = {},
+                    label = { Text("発売日") },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = false,
+                    trailingIcon = {
+                        Icon(Icons.Default.CalendarToday, contentDescription = "カレンダーを開く")
+                    },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                        disabledBorderColor = MaterialTheme.colorScheme.outline,
+                        disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                )
+            }
 
-            OutlinedTextField(
-                value = restockDateText,
-                onValueChange = { restockDateText = it },
-                label = { Text("再販日 (yyyy/MM/dd)") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
+            Box(modifier = Modifier.clickable { showRestockDatePicker = true }) {
+                OutlinedTextField(
+                    value = restockDateText,
+                    onValueChange = {},
+                    label = { Text("再販日") },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = false,
+                    trailingIcon = {
+                        Icon(Icons.Default.CalendarToday, contentDescription = "カレンダーを開く")
+                    },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                        disabledBorderColor = MaterialTheme.colorScheme.outline,
+                        disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                )
+            }
 
             // 優先度
             Text("優先度", style = MaterialTheme.typography.labelLarge)
@@ -183,7 +260,6 @@ fun GunplaFormScreen(
                     gradeError = grade.isBlank()
                     if (nameError || gradeError) return@Button
 
-                    val sdf = SimpleDateFormat("yyyy/MM/dd", Locale.JAPAN)
                     val releaseDate = try {
                         if (releaseDateText.isNotBlank()) sdf.parse(releaseDateText)?.time else null
                     } catch (e: Exception) { null }
