@@ -1,6 +1,7 @@
 package com.example.gunplaradar.ui.patrol
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -36,6 +37,12 @@ fun PatrolFormScreen(
 
     var showDatePicker by remember { mutableStateOf(false) }
     val datePickerState = rememberDatePickerState()
+
+    val dateInteractionSource = remember { MutableInteractionSource() }
+    val isDatePressed by dateInteractionSource.collectIsPressedAsState()
+    LaunchedEffect(isDatePressed) {
+        if (isDatePressed) showDatePicker = true
+    }
 
     val sdf = remember { SimpleDateFormat("yyyy/MM/dd", Locale.JAPAN) }
     val tdf = remember { SimpleDateFormat("HH:mm", Locale.JAPAN) }
@@ -110,24 +117,17 @@ fun PatrolFormScreen(
                 }
             }
 
-            Box(modifier = Modifier.clickable { showDatePicker = true }) {
-                OutlinedTextField(
-                    value = dateText,
-                    onValueChange = {},
-                    label = { Text("日付") },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = false,
-                    trailingIcon = {
-                        Icon(Icons.Default.CalendarToday, contentDescription = "カレンダーを開く")
-                    },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        disabledTextColor = MaterialTheme.colorScheme.onSurface,
-                        disabledBorderColor = MaterialTheme.colorScheme.outline,
-                        disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                )
-            }
+            OutlinedTextField(
+                value = dateText,
+                onValueChange = {},
+                label = { Text("日付") },
+                modifier = Modifier.fillMaxWidth(),
+                readOnly = true,
+                interactionSource = dateInteractionSource,
+                trailingIcon = {
+                    Icon(Icons.Default.CalendarToday, contentDescription = "カレンダーを開く")
+                }
+            )
 
             OutlinedTextField(
                 value = timeText,

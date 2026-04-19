@@ -179,7 +179,8 @@ fun MainNavGraph() {
                     uiState = uiState,
                     onPreviousMonth = viewModel::previousMonth,
                     onNextMonth = viewModel::nextMonth,
-                    onDayClick = {}
+                    onDayClick = {},
+                    onStockDiffClick = { navController.navigate(Routes.STOCK_DIFF) }
                 )
             }
 

@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.*
@@ -32,7 +33,8 @@ fun CalendarScreen(
     uiState: CalendarUiState,
     onPreviousMonth: () -> Unit,
     onNextMonth: () -> Unit,
-    onDayClick: (Long) -> Unit
+    onDayClick: (Long) -> Unit,
+    onStockDiffClick: () -> Unit = {}
 ) {
     val cal = Calendar.getInstance().apply {
         set(uiState.currentYear, uiState.currentMonth, 1)
@@ -58,6 +60,11 @@ fun CalendarScreen(
     Scaffold(
         topBar = {
             TopAppBar(title = { Text("再販カレンダー") })
+        },
+        floatingActionButton = {
+            FloatingActionButton(onClick = onStockDiffClick) {
+                Icon(Icons.Default.Add, contentDescription = "品出し差分登録")
+            }
         }
     ) { paddingValues ->
         Column(

@@ -3,6 +3,8 @@ package com.example.gunplaradar.ui.wishlist
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -63,6 +65,19 @@ fun GunplaFormScreen(
 
     var showReleaseDatePicker by remember { mutableStateOf(false) }
     var showRestockDatePicker by remember { mutableStateOf(false) }
+
+    val releaseDateInteractionSource = remember { MutableInteractionSource() }
+    val isReleaseDatePressed by releaseDateInteractionSource.collectIsPressedAsState()
+    LaunchedEffect(isReleaseDatePressed) {
+        if (isReleaseDatePressed) showReleaseDatePicker = true
+    }
+
+    val restockDateInteractionSource = remember { MutableInteractionSource() }
+    val isRestockDatePressed by restockDateInteractionSource.collectIsPressedAsState()
+    LaunchedEffect(isRestockDatePressed) {
+        if (isRestockDatePressed) showRestockDatePicker = true
+    }
+
     val releaseDatePickerState = rememberDatePickerState(
         initialSelectedDateMillis = existingItem?.releaseDate?.toUtcMidnight()
     )
@@ -183,43 +198,29 @@ fun GunplaFormScreen(
                 singleLine = true
             )
 
-            Box(modifier = Modifier.clickable { showReleaseDatePicker = true }) {
-                OutlinedTextField(
-                    value = releaseDateText,
-                    onValueChange = {},
-                    label = { Text("発売日") },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = false,
-                    trailingIcon = {
-                        Icon(Icons.Default.CalendarToday, contentDescription = "カレンダーを開く")
-                    },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        disabledTextColor = MaterialTheme.colorScheme.onSurface,
-                        disabledBorderColor = MaterialTheme.colorScheme.outline,
-                        disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                )
-            }
+            OutlinedTextField(
+                value = releaseDateText,
+                onValueChange = {},
+                label = { Text("発売日") },
+                modifier = Modifier.fillMaxWidth(),
+                readOnly = true,
+                interactionSource = releaseDateInteractionSource,
+                trailingIcon = {
+                    Icon(Icons.Default.CalendarToday, contentDescription = "カレンダーを開く")
+                }
+            )
 
-            Box(modifier = Modifier.clickable { showRestockDatePicker = true }) {
-                OutlinedTextField(
-                    value = restockDateText,
-                    onValueChange = {},
-                    label = { Text("再販日") },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = false,
-                    trailingIcon = {
-                        Icon(Icons.Default.CalendarToday, contentDescription = "カレンダーを開く")
-                    },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        disabledTextColor = MaterialTheme.colorScheme.onSurface,
-                        disabledBorderColor = MaterialTheme.colorScheme.outline,
-                        disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                )
-            }
+            OutlinedTextField(
+                value = restockDateText,
+                onValueChange = {},
+                label = { Text("再販日") },
+                modifier = Modifier.fillMaxWidth(),
+                readOnly = true,
+                interactionSource = restockDateInteractionSource,
+                trailingIcon = {
+                    Icon(Icons.Default.CalendarToday, contentDescription = "カレンダーを開く")
+                }
+            )
 
             // 優先度
             Text("優先度", style = MaterialTheme.typography.labelLarge)

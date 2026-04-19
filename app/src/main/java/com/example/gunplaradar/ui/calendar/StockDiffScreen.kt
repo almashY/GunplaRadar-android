@@ -1,16 +1,17 @@
 package com.example.gunplaradar.ui.calendar
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.gunplaradar.data.entity.GunplaItemEntity
 import com.example.gunplaradar.data.entity.StockDelayRecordEntity
@@ -35,6 +36,61 @@ fun StockDiffScreen(
     var errorMessage by remember { mutableStateOf("") }
 
     val sdf = SimpleDateFormat("yyyy/MM/dd", Locale.JAPAN)
+
+    var showRestockDatePicker by remember { mutableStateOf(false) }
+    var showActualDatePicker by remember { mutableStateOf(false) }
+    val restockDatePickerState = rememberDatePickerState()
+    val actualDatePickerState = rememberDatePickerState()
+
+    val restockDateInteractionSource = remember { MutableInteractionSource() }
+    val isRestockDatePressed by restockDateInteractionSource.collectIsPressedAsState()
+    LaunchedEffect(isRestockDatePressed) {
+        if (isRestockDatePressed) showRestockDatePicker = true
+    }
+
+    val actualDateInteractionSource = remember { MutableInteractionSource() }
+    val isActualDatePressed by actualDateInteractionSource.collectIsPressedAsState()
+    LaunchedEffect(isActualDatePressed) {
+        if (isActualDatePressed) showActualDatePicker = true
+    }
+
+    if (showRestockDatePicker) {
+        DatePickerDialog(
+            onDismissRequest = { showRestockDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    restockDatePickerState.selectedDateMillis?.let {
+                        restockDateText = sdf.format(Date(it))
+                    }
+                    showRestockDatePicker = false
+                }) { Text("OK") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRestockDatePicker = false }) { Text("キャンセル") }
+            }
+        ) {
+            DatePicker(state = restockDatePickerState)
+        }
+    }
+
+    if (showActualDatePicker) {
+        DatePickerDialog(
+            onDismissRequest = { showActualDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    actualDatePickerState.selectedDateMillis?.let {
+                        actualStockDateText = sdf.format(Date(it))
+                    }
+                    showActualDatePicker = false
+                }) { Text("OK") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showActualDatePicker = false }) { Text("キャンセル") }
+            }
+        ) {
+            DatePicker(state = actualDatePickerState)
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -123,18 +179,26 @@ fun StockDiffScreen(
 
             OutlinedTextField(
                 value = restockDateText,
-                onValueChange = { restockDateText = it },
-                label = { Text("再販日 (yyyy/MM/dd)") },
+                onValueChange = {},
+                label = { Text("再販日") },
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+                readOnly = true,
+                interactionSource = restockDateInteractionSource,
+                trailingIcon = {
+                    Icon(Icons.Default.CalendarToday, contentDescription = "カレンダーを開く")
+                }
             )
 
             OutlinedTextField(
                 value = actualStockDateText,
-                onValueChange = { actualStockDateText = it },
-                label = { Text("実際の品出し日 (yyyy/MM/dd)") },
+                onValueChange = {},
+                label = { Text("実際の品出し日") },
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+                readOnly = true,
+                interactionSource = actualDateInteractionSource,
+                trailingIcon = {
+                    Icon(Icons.Default.CalendarToday, contentDescription = "カレンダーを開く")
+                }
             )
 
             if (errorMessage.isNotEmpty()) {
